@@ -14,12 +14,113 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Article {
-  id          Int      @id @default(autoincrement())
-  title       String   @unique
-  description String?
-  body        String
-  published   Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+// User model
+model User {
+  UserID      Int        @id @default(autoincrement())
+  Email       String     @unique
+  Password    String
+  FirstName   String
+  LastName    String
+  Role        RoleType
+  Status      StatusType
+  OnboardTime DateTime
+  LastLogin   DateTime?
+  properties  Property[]
+  Agent       Agent[]
+}
+
+// Role enum
+enum RoleType {
+  Admin
+  CompanyOwner
+  Agent
+  Tenant
+  Owner
+}
+
+// Status enum
+enum StatusType {
+  Active
+  Inactive
+  Deleted
+}
+
+// Company model
+model Company {
+  CompanyID          Int            @id @default(autoincrement())
+  CompanyName        String
+  OnboardTime        DateTime
+  ArchiveTime        DateTime?
+  CompanyMailbox     String?
+  NumberOfProperties Int
+  NumberOfAgents     Int
+  agents             Agent[]
+  InvitedAgent       InvitedAgent[]
+}
+
+// Agent model
+model Agent {
+  AgentID          Int                    @id @default(autoincrement())
+  user             User                   @relation(fields: [UserId], references: [UserID])
+  UserId           Int
+  company          Company                @relation(fields: [CompanyID], references: [CompanyID])
+  CompanyID        Int
+  Status           StatusType
+  InviteTime       DateTime
+  onboardTrackings AgentOnboardTracking[]
+  Property         Property[]
+  Unit             Unit[]
+}
+
+// Property model
+model Property {
+  PropertyID      Int    @id @default(autoincrement())
+  user            User   @relation(fields: [UserId], references: [UserID])
+  UserId          Int
+  StreetLine      String
+  Status          String
+  Type            String
+  assignedAgent   Agent  @relation(fields: [AssignedAgentID], references: [AgentID])
+  AssignedAgentID Int
+  units           Unit[]
+}
+
+// Unit model
+model Unit {
+  UnitID          Int      @id @default(autoincrement())
+  property        Property @relation(fields: [PropertyID], references: [PropertyID])
+  PropertyID      Int
+  StreetLine      String
+  assignedAgent   Agent    @relation(fields: [AssignedAgentID], references: [AgentID])
+  AssignedAgentID Int
+}
+
+// InvitedAgent model
+model InvitedAgent {
+  InvitedAgentID Int        @id @default(autoincrement())
+  company        Company    @relation(fields: [CompanyID], references: [CompanyID])
+  CompanyID      Int
+  FirstName      String
+  LastName       String
+  Email          String
+  Type           RoleType
+  InviteTime     DateTime
+  Status         StatusType
+}
+
+// AgentOnboardTracking model
+model AgentOnboardTracking {
+  TrackingID Int           @id @default(autoincrement())
+  agent      Agent         @relation(fields: [AgentID], references: [AgentID])
+  AgentID    Int
+  Status     OnboardStatus
+  InviteTime DateTime
+}
+
+// OnboardStatus enum
+enum OnboardStatus {
+  Pending
+  InProgress
+  Completed
+  Failed
 }
